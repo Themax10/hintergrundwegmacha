@@ -1,56 +1,50 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hintergrund Entferner</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hintergrund entfernen</title>
 </head>
 <body>
-    <h1>Hochladen eines Bildes zum Entfernen des Hintergrunds</h1>
-    
-    <input type="file" id="image-upload" accept="image/*">
-    <button id="upload-btn">Bild hochladen</button>
-    <div id="result">
-        <img id="result-img" style="display:none;"/>
-    </div>
+  <h1>Hintergrund entfernen</h1>
+  <form id="upload-form">
+    <input type="file" id="image-input" accept="image/*" required>
+    <button type="submit">Bild hochladen</button>
+  </form>
+  <h2>Ergebnis:</h2>
+  <img id="result-image" alt="Ergebnis" style="max-width: 100%; display: none;">
 
-    <script>
-        const uploadBtn = document.getElementById("upload-btn");
-        const imageUpload = document.getElementById("image-upload");
-        const resultImg = document.getElementById("result-img");
+  <script>
+    document.getElementById("upload-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
 
-        // Wenn der Button geklickt wird
-        uploadBtn.addEventListener("click", async () => {
-            const file = imageUpload.files[0];
+      const fileInput = document.getElementById("image-input");
+      const formData = new FormData();
+      formData.append("image", fileInput.files[0]);
 
-            if (!file) {
-                alert("Bitte wähle ein Bild aus.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("image", file);
-
-            try {
-                // Ändere hier den Backend-URL-Link auf deinen Vercel-Link
-const response = await fetch("https://hintergrundwegmacha-rm2c222-cphma8btz-thhems-projects.vercel.app/upload", {
-  method: "POST",
-  body: formData,
-});
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    resultImg.src = URL.createObjectURL(blob);
-                    resultImg.style.display = "block"; // Bild anzeigen
-                } else {
-                    alert("Fehler beim Hochladen. Bitte versuche es erneut.");
-                }
-            } catch (error) {
-                console.error("Fehler:", error);
-                alert("Es gab ein Problem mit der Verbindung zum Server.");
-            }
+      try {
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
         });
-    </script>
+
+        if (!response.ok) {
+          throw new Error("Fehler beim Hochladen des Bildes");
+        }
+
+        const imageBlob = await response.blob();
+        const imageUrl = URL.createObjectURL(imageBlob);
+        const resultImage = document.getElementById("result-image");
+
+        resultImage.src = imageUrl;
+        resultImage.style.display = "block";
+      } catch (error) {
+        console.error("Fehler:", error);
+        alert("Es gab ein Problem bei der Verarbeitung.");
+      }
+    });
+  </script>
 </body>
 </html>
+
 
