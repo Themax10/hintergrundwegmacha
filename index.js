@@ -2,33 +2,45 @@ const express = require("express");
 const multer = require("multer");
 const axios = require("axios");
 const fs = require("fs");
+const cors = require("cors");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
+app.use(cors());
+
+const API_KEY = "AEZL4iWDuhjrpztuDUPp9DUX";
+
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {
-    const apiKey = "DEIN_API_SCHLÜSSEL";
+    if (!req.file) {
+      return res.status(400).send("Kein Bild hochgeladen.");
+    }
+
     const apiUrl = "https://api.remove.bg/v1.0/removebg";
+    const imagePath = req.file.path;
 
-    const response = await axios.post(
-      apiUrl,
-      new FormData().append("image_file", fs.createReadStream(req.file.path)),
-      {
-        headers: {
-          "X-Api-Key": apiKey,
-          ...form.getHeaders(),
-        },
-      }
-    );
+    const formData = new FormData();
+    formData.append("image_file", fs.createReadStream(imagePath));
 
-    fs.unlinkSync(req.file.path); // Lokale Datei löschen
+    const response = await axios.post(apiUrl, formData, {
+      headers: {
+        "X-Api-Key": API_KEY,
+        ...formData.getHeaders(),
+      },
+      responseType: "arraybuffer", // Rückgabe als Binärdaten
+    });
+
+    fs.unlinkSync(imagePath); // Lokale Datei löschen
+
     res.setHeader("Content-Type", "image/png");
-    res.send(response.data); // Ergebnis zurückgeben
+    res.send(response.data); // Bearbeitetes Bild zurückgeben
   } catch (error) {
-    console.error(error);
+    console.error("Fehler bei der Verarbeitung:", error.response?.data || error.message);
     res.status(500).send("Fehler bei der Verarbeitung.");
   }
 });
 
-module.exports = app;
+app.listen(3000, () => {
+  console.log("Server läuft auf Port 3000");
+});
