@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hintergrundentferner</title>
+  <title>Hintergrund Entfernen</title>
 </head>
 <body>
-  <h1>Hintergrund entfernen</h1>
+  <h1>Hintergrund Entfernen</h1>
   <input type="file" id="image-upload" />
   <button onclick="uploadImage()">Hochladen</button>
   <br />
@@ -25,21 +25,27 @@
       const formData = new FormData();
       formData.append("image", file);
 
-      const response = await fetch("https://dein-projekt.vercel.app/upload", {
-        method: "POST",
-        body: formData,
-      });
+      try {
+        const response = await fetch("https://hintergrundwegmacha.vercel.app/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const downloadLink = document.getElementById("download-link");
-        downloadLink.href = URL.createObjectURL(blob);
-        downloadLink.style.display = "block";
-        downloadLink.textContent = "Download Bild";
-      } else {
-        alert("Fehler beim Hochladen.");
+        if (response.ok) {
+          const blob = await response.blob();
+          const downloadLink = document.getElementById("download-link");
+          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.style.display = "block";
+          downloadLink.textContent = "Download Bild";
+        } else {
+          alert("Fehler beim Hochladen. Bitte versuche es erneut.");
+        }
+      } catch (error) {
+        console.error("Fehler:", error);
+        alert("Es gab ein Problem mit der Verbindung zum Server.");
       }
     }
   </script>
 </body>
 </html>
+
