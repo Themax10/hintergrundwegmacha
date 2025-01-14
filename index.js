@@ -3,14 +3,17 @@ const multer = require("multer");
 const axios = require("axios");
 const fs = require("fs");
 const cors = require("cors");
+const FormData = require("form-data");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
 
+// Dein API-Schlüssel für remove.bg
 const API_KEY = "AEZL4iWDuhjrpztuDUPp9DUX";
 
+// POST-Route, um das Bild zu empfangen und zu verarbeiten
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
@@ -28,7 +31,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
         "X-Api-Key": API_KEY,
         ...formData.getHeaders(),
       },
-      responseType: "arraybuffer", // Rückgabe als Binärdaten
+      responseType: "arraybuffer", // Bild als Binärdaten zurückgeben
     });
 
     fs.unlinkSync(imagePath); // Lokale Datei löschen
@@ -41,6 +44,8 @@ app.post("/upload", upload.single("image"), async (req, res) => {
   }
 });
 
+// Server läuft auf Port 3000
 app.listen(3000, () => {
-  console.log("Server läuft auf Port 3000");
+  console.log("Backend läuft auf Port 3000");
 });
+
