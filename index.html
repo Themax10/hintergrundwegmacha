@@ -11,14 +11,14 @@
       font-family: 'Poppins', sans-serif;
       margin: 0;
       padding: 0;
-      background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+      background: linear-gradient(to bottom, #003366, #99ccff);
       color: #333;
       text-align: center;
     }
 
     /* Header Styles */
     header {
-      background: #4caf50;
+      background: #003366;
       color: white;
       padding: 1.5rem 0;
       font-size: 2rem;
@@ -48,7 +48,7 @@
     }
 
     button {
-      background: #4caf50;
+      background: #00509e;
       color: white;
       border: none;
       padding: 0.8rem 1.5rem;
@@ -59,7 +59,7 @@
     }
 
     button:hover {
-      background: #45a049;
+      background: #003f7f;
     }
 
     .output {
@@ -70,6 +70,14 @@
       max-width: 100%;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .action-buttons {
+      margin-top: 1rem;
+    }
+
+    .action-buttons button {
+      margin: 0 0.5rem;
     }
   </style>
 </head>
@@ -120,7 +128,35 @@
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        output.innerHTML = `<h3>Ergebnis:</h3><img src="${url}" alt="Prozessiertes Bild">`;
+        output.innerHTML = `
+          <h3>Ergebnis:</h3>
+          <img src="${url}" alt="Prozessiertes Bild">
+          <div class="action-buttons">
+            <button id="copyToClipboard">In Zwischenablage speichern</button>
+            <button id="downloadImage">Herunterladen</button>
+          </div>
+        `;
+
+        // Copy to Clipboard
+        document.getElementById("copyToClipboard").addEventListener("click", async () => {
+          try {
+            const clipboardItem = [new ClipboardItem({ "image/png": blob })];
+            await navigator.clipboard.write(clipboardItem);
+            alert("Bild wurde in die Zwischenablage kopiert!");
+          } catch (err) {
+            console.error(err);
+            alert("Fehler beim Kopieren in die Zwischenablage.");
+          }
+        });
+
+        // Download Image
+        document.getElementById("downloadImage").addEventListener("click", () => {
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "hintergrund_entfernt.png";
+          a.click();
+        });
+
       } catch (error) {
         console.error(error);
         output.innerHTML = "Ein Fehler ist aufgetreten. Bitte versuche es erneut.";
