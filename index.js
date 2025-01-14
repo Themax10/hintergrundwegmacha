@@ -1,27 +1,23 @@
 const express = require("express");
 const multer = require("multer");
 const axios = require("axios");
-const fs = require("fs");
-const cors = require("cors");
 const FormData = require("form-data");
+const cors = require("cors");
 
 const app = express();
-const storage = multer.memoryStorage();  // Ändern auf Speicher und nicht auf Festplatte
+const storage = multer.memoryStorage();  // Speichern im Arbeitsspeicher
 const upload = multer({ storage: storage });
 
 app.use(cors());
 
-const API_KEY = "AEZL4iWDuhjrpztuDUPp9DUX";  // Dein API-Schlüssel
+// API-Schlüssel aus Umgebungsvariable
+const API_KEY = process.env.REMOVE_BG_API_KEY || "AEZL4iWDuhjrpztuDUPp9DUX";  // Standard-Schlüssel als Fallback
 
-// Route zum Hochladen des Bildes
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).send("Kein Bild hochgeladen.");
     }
-
-    // API URL von remove.bg
-    const apiUrl = "https://api.remove.bg/v1.0/removebg";
 
     // Die Datei, die wir im Speicher haben
     const formData = new FormData();
@@ -30,25 +26,24 @@ app.post("/upload", upload.single("image"), async (req, res) => {
       contentType: "image/png",
     });
 
-    // Anfrage an remove.bg senden
-    const response = await axios.post(apiUrl, formData, {
+    // API-Anfrage an remove.bg
+    const response = await axios.post("https://api.remove.bg/v1.0/removebg", formData, {
       headers: {
         "X-Api-Key": API_KEY,
         ...formData.getHeaders(),
       },
-      responseType: "arraybuffer",  // Rückgabe als Binärdaten
+      responseType: "arraybuffer",  // Binärdaten zurückgeben
     });
 
-    // Bearbeitetes Bild zurückgeben
+    // Erfolgreiche Antwort: Bild mit entferntem Hintergrund zurückgeben
     res.setHeader("Content-Type", "image/png");
-    res.send(response.data);  // Das Bild mit entferntem Hintergrund zurückgeben
+    res.send(response.data);
   } catch (error) {
     console.error("Fehler bei der Verarbeitung:", error.response?.data || error.message);
     res.status(500).send("Fehler bei der Verarbeitung.");
   }
 });
 
-// Vercel benötigt keine feste Portnummer, aber du kannst die Portnummer mit einem Standardwert festlegen
 app.listen(3000, () => {
   console.log("Server läuft auf Port 3000");
 });
