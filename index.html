@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hintergrund Entfernen</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     /* Global Styles */
     body {
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Montserrat', sans-serif;
       margin: 0;
       padding: 0;
-      background: linear-gradient(to bottom, #ff7f50, #ff4500);
+      background: linear-gradient(to bottom, #ffe4c4, #ff7f50);
       color: #333;
       text-align: center;
     }
@@ -21,7 +21,7 @@
       background: #ff4500;
       color: white;
       padding: 1.5rem 0;
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-family: 'Lobster', cursive;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
@@ -45,10 +45,13 @@
       margin: 1rem auto;
       font-size: 1rem;
       padding: 0.5rem;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
 
     button {
-      background: #ff4500;
+      background: #ff7f50;
       color: white;
       border: none;
       padding: 0.8rem 1.5rem;
@@ -59,11 +62,20 @@
     }
 
     button:hover {
-      background: #e63e00;
+      background: #e06340;
     }
 
     .output {
       margin-top: 2rem;
+    }
+
+    .checkerboard {
+      display: inline-block;
+      position: relative;
+      width: 100%;
+      background: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%), 
+                  linear-gradient(45deg, #eee 25%, #fff 25%, #fff 75%, #eee 75%);
+      background-size: 20px 20px;
     }
 
     img {
@@ -103,7 +115,7 @@
     <h2>Einfach ein Bild hochladen oder aus der Zwischenablage einfügen!</h2>
     <form id="uploadForm">
       <input type="file" id="imageInput" accept="image/*">
-      <textarea id="pasteArea" rows="5" placeholder="Füge hier ein Bild aus der Zwischenablage ein (STRG+V)..."></textarea>
+      <textarea id="pasteArea" rows="5" placeholder="Füge hier ein Bild aus der Zwischenablage oder eine Bild-URL ein..."></textarea>
       <button type="submit">Hintergrund Entfernen</button>
     </form>
     <div class="output" id="output"></div>
@@ -127,11 +139,26 @@
       if (fileInput.files.length) {
         file = fileInput.files[0];
       } else if (pasteArea.value.trim()) {
+        const pasteContent = pasteArea.value.trim();
+
         try {
-          const blob = await fetch(pasteArea.value.trim()).then(res => res.blob());
-          file = new File([blob], "pasted-image.png", { type: blob.type });
+          if (pasteContent.startsWith("data:image")) {
+            // Base64 Data
+            const response = await fetch(pasteContent);
+            const blob = await response.blob();
+            file = new File([blob], "pasted-image.png", { type: blob.type });
+          } else if (pasteContent.startsWith("http")) {
+            // URL
+            const response = await fetch(pasteContent);
+            const blob = await response.blob();
+            file = new File([blob], "pasted-image.png", { type: blob.type });
+          } else {
+            alert("Ungültige Zwischenablage oder URL.");
+            return;
+          }
         } catch (error) {
-          alert("Ungültige Zwischenablage oder URL.");
+          console.error("Fehler beim Verarbeiten der Zwischenablage:", error);
+          alert("Fehler beim Verarbeiten der Zwischenablage.");
           return;
         }
       } else {
@@ -156,7 +183,11 @@
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        const imageElement = `<img src="${url}" alt="Prozessiertes Bild">`;
+        const imageElement = `
+          <div class="checkerboard">
+            <img src="${url}" alt="Prozessiertes Bild">
+          </div>
+        `;
         const buttons = `
           <div class="action-buttons">
             <button onclick="copyToClipboard('${url}')">In Zwischenablage speichern</button>
