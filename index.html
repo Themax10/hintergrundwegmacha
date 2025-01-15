@@ -120,7 +120,7 @@
     <div class="previous-images" id="previousImages">
       <h3>Vorherige Bilder:</h3>
     </div>
-    <div id="location" style="margin-top: 2rem;"></div> <!-- Hier wird die Stadt angezeigt -->
+    <div id="location" style="margin-top: 2rem; font-size: 1.2rem;"></div> <!-- Hier wird die Stadt angezeigt -->
   </main>
 
   <script>
@@ -132,13 +132,17 @@
       fetch(`https://ipgeolocation.abstractapi.com/v1/?api_key=${API_KEY}`)
         .then(response => response.json())
         .then(data => {
-          const city = data.city;
-          const country = data.country;
-          document.getElementById("location").innerText = `Du bist in ${city}, ${country}`;
+          if (data.city && data.country) {
+            const city = data.city;
+            const country = data.country;
+            document.getElementById("location").innerText = `Du bist in ${city}, ${country}`;
+          } else {
+            document.getElementById("location").innerText = "Standort konnte nicht abgerufen werden.";
+          }
         })
         .catch(error => {
           console.error('Fehler beim Abrufen des Standorts:', error);
-          document.getElementById("location").innerText = "Standort konnte nicht abgerufen werden.";
+          document.getElementById("location").innerText = "Fehler beim Abrufen des Standorts.";
         });
     };
 
