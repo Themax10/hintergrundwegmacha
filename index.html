@@ -11,14 +11,14 @@
       font-family: 'Poppins', sans-serif;
       margin: 0;
       padding: 0;
-      background: linear-gradient(to bottom, #003366, #99ccff);
+      background: linear-gradient(to bottom, #ff7f50, #ff4500);
       color: #333;
       text-align: center;
     }
 
     /* Header Styles */
     header {
-      background: #003366;
+      background: #ff4500;
       color: white;
       padding: 1.5rem 0;
       font-size: 2rem;
@@ -40,7 +40,7 @@
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
 
-    input[type="file"] {
+    input[type="file"], textarea {
       display: block;
       margin: 1rem auto;
       font-size: 1rem;
@@ -48,7 +48,7 @@
     }
 
     button {
-      background: #00509e;
+      background: #ff4500;
       color: white;
       border: none;
       padding: 0.8rem 1.5rem;
@@ -59,7 +59,7 @@
     }
 
     button:hover {
-      background: #003f7f;
+      background: #e63e00;
     }
 
     .output {
@@ -70,6 +70,16 @@
       max-width: 100%;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .previous-images {
+      margin-top: 3rem;
+      text-align: left;
+    }
+
+    .previous-images h3 {
+      margin-bottom: 1rem;
     }
 
     .action-buttons {
@@ -90,29 +100,47 @@
 
   <!-- Main Content -->
   <main>
-    <h2>Einfach ein Bild hochladen und den Hintergrund entfernen lassen!</h2>
+    <h2>Einfach ein Bild hochladen oder aus der Zwischenablage einfügen!</h2>
     <form id="uploadForm">
-      <input type="file" id="imageInput" accept="image/*" required>
+      <input type="file" id="imageInput" accept="image/*">
+      <textarea id="pasteArea" rows="5" placeholder="Füge hier ein Bild aus der Zwischenablage ein (STRG+V)..."></textarea>
       <button type="submit">Hintergrund Entfernen</button>
     </form>
     <div class="output" id="output"></div>
+    <div class="previous-images" id="previousImages">
+      <h3>Vorherige Bilder:</h3>
+    </div>
   </main>
 
   <script>
     const form = document.getElementById("uploadForm");
     const output = document.getElementById("output");
+    const previousImages = document.getElementById("previousImages");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const fileInput = document.getElementById("imageInput");
-      if (!fileInput.files.length) {
-        alert("Bitte ein Bild auswählen.");
+      const pasteArea = document.getElementById("pasteArea");
+
+      let file;
+      if (fileInput.files.length) {
+        file = fileInput.files[0];
+      } else if (pasteArea.value.trim()) {
+        try {
+          const blob = await fetch(pasteArea.value.trim()).then(res => res.blob());
+          file = new File([blob], "pasted-image.png", { type: blob.type });
+        } catch (error) {
+          alert("Ungültige Zwischenablage oder URL.");
+          return;
+        }
+      } else {
+        alert("Bitte ein Bild auswählen oder einfügen.");
         return;
       }
 
       const formData = new FormData();
-      formData.append("image", fileInput.files[0]);
+      formData.append("image", file);
 
       try {
         output.innerHTML = "Bild wird verarbeitet...";
@@ -128,40 +156,42 @@
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        output.innerHTML = `
-          <h3>Ergebnis:</h3>
-          <img src="${url}" alt="Prozessiertes Bild">
+        const imageElement = `<img src="${url}" alt="Prozessiertes Bild">`;
+        const buttons = `
           <div class="action-buttons">
-            <button id="copyToClipboard">In Zwischenablage speichern</button>
-            <button id="downloadImage">Herunterladen</button>
+            <button onclick="copyToClipboard('${url}')">In Zwischenablage speichern</button>
+            <button onclick="downloadImage('${url}')">Herunterladen</button>
           </div>
         `;
 
-        // Copy to Clipboard
-        document.getElementById("copyToClipboard").addEventListener("click", async () => {
-          try {
-            const clipboardItem = [new ClipboardItem({ "image/png": blob })];
-            await navigator.clipboard.write(clipboardItem);
-            alert("Bild wurde in die Zwischenablage kopiert!");
-          } catch (err) {
-            console.error(err);
-            alert("Fehler beim Kopieren in die Zwischenablage.");
-          }
-        });
-
-        // Download Image
-        document.getElementById("downloadImage").addEventListener("click", () => {
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "hintergrund_entfernt.png";
-          a.click();
-        });
-
+        output.innerHTML = `<h3>Ergebnis:</h3>${imageElement}${buttons}`;
+        previousImages.innerHTML += `<div>${imageElement}${buttons}</div>`;
       } catch (error) {
         console.error(error);
         output.innerHTML = "Ein Fehler ist aufgetreten. Bitte versuche es erneut.";
       }
     });
+
+    function copyToClipboard(url) {
+      fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const clipboardItem = [new ClipboardItem({ "image/png": blob })];
+          navigator.clipboard.write(clipboardItem);
+          alert("Bild wurde in die Zwischenablage kopiert!");
+        })
+        .catch(error => {
+          console.error(error);
+          alert("Fehler beim Kopieren in die Zwischenablage.");
+        });
+    }
+
+    function downloadImage(url) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "hintergrund_entfernt.png";
+      a.click();
+    }
   </script>
 
 </body>
