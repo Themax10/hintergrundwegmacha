@@ -120,32 +120,9 @@
     <div class="previous-images" id="previousImages">
       <h3>Vorherige Bilder:</h3>
     </div>
-    <div id="location" style="margin-top: 2rem; font-size: 1.2rem;"></div> <!-- Hier wird die Stadt angezeigt -->
   </main>
 
   <script>
-    // API-Schlüssel für AbstractAPI
-    const API_KEY = "b8bb26e7-c27b-48a6-96a5-13b9655e3cb2";
-    
-    // Standort des Besuchers anzeigen
-    window.onload = function() {
-      fetch(`https://ipgeolocation.abstractapi.com/v1/?api_key=${API_KEY}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.city && data.country) {
-            const city = data.city;
-            const country = data.country;
-            document.getElementById("location").innerText = `Du bist in ${city}, ${country}`;
-          } else {
-            document.getElementById("location").innerText = "Standort konnte nicht abgerufen werden.";
-          }
-        })
-        .catch(error => {
-          console.error('Fehler beim Abrufen des Standorts:', error);
-          document.getElementById("location").innerText = "Fehler beim Abrufen des Standorts.";
-        });
-    };
-
     const form = document.getElementById("uploadForm");
     const output = document.getElementById("output");
     const previousImages = document.getElementById("previousImages");
