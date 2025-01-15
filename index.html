@@ -6,7 +6,6 @@
   <title>Hintergrund Entfernen</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
-    /* Global Styles */
     body {
       font-family: 'Roboto', sans-serif;
       margin: 0;
@@ -100,19 +99,18 @@
     .action-buttons button {
       margin: 0 0.5rem;
     }
-
-    #location {
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      color: #333;
-    }
   </style>
 </head>
 <body>
-  <header>Hintergrund Entfernen</header>
+
+  <!-- Header -->
+  <header>
+    Hintergrund Entfernen
+  </header>
+
+  <!-- Main Content -->
   <main>
     <h2>Einfach ein Bild hochladen oder aus der Zwischenablage einfügen!</h2>
-    <div id="location">Lädt Standort...</div>
     <form id="uploadForm">
       <input type="file" id="imageInput" accept="image/*">
       <textarea id="pasteArea" rows="5" placeholder="Füge hier ein Bild aus der Zwischenablage oder eine Bild-URL ein..."></textarea>
@@ -122,46 +120,52 @@
     <div class="previous-images" id="previousImages">
       <h3>Vorherige Bilder:</h3>
     </div>
+    <div id="location" style="margin-top: 2rem;"></div> <!-- Hier wird die Stadt angezeigt -->
   </main>
+
   <script>
-    const API_KEY_REMOVE_BG = "AEZL4iWDuhjrpztuDUPp9DUX";  // Dein Remove.bg API-Key
-    const API_KEY_GEOLOCATION = "b8bb26e7-c27b-48a6-96a5-13b9655e3cb2";  // Dein Abstract API Key
+    // API-Schlüssel für AbstractAPI
+    const API_KEY = "b8bb26e7-c27b-48a6-96a5-13b9655e3cb2";
+    
+    // Standort des Besuchers anzeigen
+    window.onload = function() {
+      fetch(`https://ipgeolocation.abstractapi.com/v1/?api_key=${API_KEY}`)
+        .then(response => response.json())
+        .then(data => {
+          const city = data.city;
+          const country = data.country;
+          document.getElementById("location").innerText = `Du bist in ${city}, ${country}`;
+        })
+        .catch(error => {
+          console.error('Fehler beim Abrufen des Standorts:', error);
+          document.getElementById("location").innerText = "Standort konnte nicht abgerufen werden.";
+        });
+    };
 
-    // Geolocation API
-    async function fetchLocation() {
-      try {
-        const response = await fetch(`https://ipgeolocation.abstractapi.com/v1/?api_key=${API_KEY_GEOLOCATION}`);
-        if (!response.ok) throw new Error("Fehler beim Abrufen der Geolocation-Daten.");
-        const data = await response.json();
-        const locationDiv = document.getElementById("location");
-        locationDiv.textContent = `Du befindest dich in ${data.city}, ${data.country}`;
-      } catch (error) {
-        console.error("Geolocation-Fehler:", error);
-        document.getElementById("location").textContent = "Standort konnte nicht abgerufen werden.";
-      }
-    }
+    const form = document.getElementById("uploadForm");
+    const output = document.getElementById("output");
+    const previousImages = document.getElementById("previousImages");
 
-    fetchLocation();
-
-    // Remove Background
-    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       const fileInput = document.getElementById("imageInput");
       const pasteArea = document.getElementById("pasteArea");
-      const output = document.getElementById("output");
-      const previousImages = document.getElementById("previousImages");
 
       let file;
       if (fileInput.files.length) {
         file = fileInput.files[0];
       } else if (pasteArea.value.trim()) {
         const pasteContent = pasteArea.value.trim();
+
         try {
           if (pasteContent.startsWith("data:image")) {
+            // Base64 Data
             const response = await fetch(pasteContent);
             const blob = await response.blob();
             file = new File([blob], "pasted-image.png", { type: blob.type });
           } else if (pasteContent.startsWith("http")) {
+            // URL
             const response = await fetch(pasteContent);
             const blob = await response.blob();
             file = new File([blob], "pasted-image.png", { type: blob.type });
@@ -169,7 +173,8 @@
             alert("Ungültige Zwischenablage oder URL.");
             return;
           }
-        } catch {
+        } catch (error) {
+          console.error("Fehler beim Verarbeiten der Zwischenablage:", error);
           alert("Fehler beim Verarbeiten der Zwischenablage.");
           return;
         }
@@ -179,33 +184,63 @@
       }
 
       const formData = new FormData();
-      formData.append("image_file", file);
+      formData.append("image", file);
 
       try {
         output.innerHTML = "Bild wird verarbeitet...";
-        const response = await fetch(`https://api.remove.bg/v1.0/removebg`, {
+        const response = await fetch("/upload", {
           method: "POST",
-          headers: {
-            "X-Api-Key": API_KEY_REMOVE_BG,
-          },
           body: formData,
         });
-        if (!response.ok) throw new Error("Fehler bei der Verarbeitung.");
+
+        if (!response.ok) {
+          throw new Error("Fehler beim Verarbeiten des Bildes.");
+        }
+
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        const imageElement = `
+        const imageElement = ` 
           <div class="checkerboard">
             <img src="${url}" alt="Prozessiertes Bild">
           </div>
         `;
-        output.innerHTML = imageElement;
-        previousImages.innerHTML += `<div>${imageElement}</div>`;
+        const buttons = `
+          <div class="action-buttons">
+            <button onclick="copyToClipboard('${url}')">In Zwischenablage speichern</button>
+            <button onclick="downloadImage('${url}')">Herunterladen</button>
+          </div>
+        `;
+
+        output.innerHTML = `<h3>Ergebnis:</h3>${imageElement}${buttons}`;
+        previousImages.innerHTML += `<div>${imageElement}${buttons}</div>`;
       } catch (error) {
-        output.innerHTML = "Fehler bei der Verarbeitung.";
         console.error(error);
+        output.innerHTML = "Ein Fehler ist aufgetreten. Bitte versuche es erneut.";
       }
     });
+
+    function copyToClipboard(url) {
+      fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const clipboardItem = [new ClipboardItem({ "image/png": blob })];
+          navigator.clipboard.write(clipboardItem);
+          alert("Bild wurde in die Zwischenablage kopiert!");
+        })
+        .catch(error => {
+          console.error(error);
+          alert("Fehler beim Kopieren in die Zwischenablage.");
+        });
+    }
+
+    function downloadImage(url) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "hintergrund_entfernt.png";
+      a.click();
+    }
   </script>
+
 </body>
 </html>
